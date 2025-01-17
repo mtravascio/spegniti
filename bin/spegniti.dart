@@ -3,13 +3,21 @@ import 'dart:io';
 import 'dart:async';
 
 void main(List<String> arguments) {
-  if (arguments.length != 1) {
-    print('Uso: spegniti <ora in formato HH:MM>');
-    exit(1);
+  String? timeInput;
+  if (arguments.isEmpty) {
+    print("Scrivi l'ora in formato HH:MM");
+
+    timeInput = stdin.readLineSync();
+
+    if (timeInput != null && timeInput.isEmpty) {
+      print("Uso: spegniti.exe HH:MM");
+      exit(1);
+    }
+  } else {
+    timeInput = arguments[0];
   }
 
-  String timeInput = arguments[0];
-  List<String> timeParts = timeInput.split(':');
+  List<String> timeParts = timeInput!.split(':');
 
   if (timeParts.length != 2) {
     print('Formato ora non valido. Usa HH:MM.');
