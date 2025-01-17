@@ -2,8 +2,9 @@ import 'package:spegniti/spegniti.dart' as spegniti;
 import 'dart:io';
 import 'dart:async';
 
-void main(List<String> arguments) {
+void main(List<String> arguments) async {
   String? timeInput;
+
   if (arguments.isEmpty) {
     print("Scrivi l'ora in formato HH:MM");
 
@@ -24,12 +25,23 @@ void main(List<String> arguments) {
     exit(1);
   }
 
+  if (Platform.isMacOS) {
+    print("E' richiesta la pwd di amministratore per spegnere!:");
+    spegniti.sudoPwd = await getPassword();
+    if (spegniti.sudoPwd!.isEmpty) {
+      print('Password non inserita, spegnimento interrotto!');
+      exit(1);
+    }
+    bool isValidPassword = await validateSudoPassword(spegniti.sudoPwd!);
+
+    if (!isValidPassword) {
+      print('Password Errata!');
+      exit(1);
+    }
+  }
+
   int hour = int.parse(timeParts[0]);
   int minute = int.parse(timeParts[1]);
-
-  // Calcola il tempo rimanente fino all'ora specificata
-  //DateTime now = DateTime.now();
-  //DateTime shutdownTime = DateTime(now.year, now.month, now.day, hour, minute);
 
   spegniti.now = DateTime.now();
   spegniti.shutdownTime = DateTime(
@@ -39,22 +51,67 @@ void main(List<String> arguments) {
     spegniti.shutdownTime = spegniti.shutdownTime!
         .add(Duration(days: 1)); // Imposta per il giorno successivo
   }
-/*
-  // Countdown
-  Timer.periodic(Duration(seconds: 1), (timer) {
-    Duration duration = shutdownTime.difference(DateTime.now());
 
-    if (duration.isNegative) {
-      timer.cancel();
-      Process.run('shutdown', ['/f', '/s', '/t', '0']).then((result) {
-        print('Sistema in fase di spegnimento...');
-      });
-    } else {
-      print(
-          'Tempo rimanente: ${duration.inHours}:${(duration.inMinutes % 60).toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}');
-    }
-  });
-  */
-  // Countdown
   Timer.periodic(Duration(seconds: 1), spegniti.go);
+}
+
+Future<String> getPassword() async {
+  List<int> passwordChars = [];
+
+  stdout.write('Inserisci la password: ');
+  stdin.echoMode = false;
+  stdin.lineMode = false;
+
+  while (true) {
+    int charCode = stdin.readByteSync();
+    if (charCode == 10 || charCode == 13) {
+      break;
+    }
+    if (charCode == 127) {
+      if (passwordChars.isNotEmpty) {
+        passwordChars.removeLast();
+        stdout.write('\b \b');
+      }
+    } else {
+      passwordChars.add(charCode);
+      stdout.write('*');
+    }
+  }
+
+  stdin.echoMode = true;
+  stdin.lineMode = true;
+
+  print('');
+
+  return String.fromCharCodes(passwordChars);
+}
+
+Future<bool> validateSudoPassword(String password) async {
+  try {
+    Process process = await Process.start(
+      'sudo',
+      ['-S', '-v'],
+      mode: ProcessStartMode.normal,
+      workingDirectory: Directory.current.path,
+    );
+
+    process.stdin.writeln(password);
+    //print(password);
+
+    final timeoutDuration = Duration(seconds: 5);
+    await Future.any([
+      process.exitCode,
+      Future.delayed(timeoutDuration, () {
+        process.kill();
+        //print('Timeout!');
+      })
+    ]);
+
+    int exitCode = await process.exitCode;
+    //print(exitCode);
+    return exitCode == 0;
+  } catch (e) {
+    print('Password Errata!');
+    return false;
+  }
 }
