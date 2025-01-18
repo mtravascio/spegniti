@@ -6,11 +6,11 @@ comando per Windows,Linux e MacOs, che spegne il computer ad una determinata ora
 
     .\spegniti.exe hh:mm (Windows)
 
-se viene lanciato il comando l'ora essa viene richiesta a consolle:
+se il comando viene eseguito senza l'ora, essa viene richiesta a consolle:
 
     ./spegniti (Linux & Mac)
 
-    .\spegniti (Windows)
+    .\spegniti.exe (Windows)
 
 Nel caso si S.O. MacOs viene anche richiesta la password di amministratore per eseguire lo spegnimento.
 
