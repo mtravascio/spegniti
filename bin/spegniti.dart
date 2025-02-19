@@ -6,7 +6,7 @@ void main(List<String> arguments) async {
   String? timeInput;
 
   if (arguments.isEmpty) {
-    print("Scrivi l'ora in formato HH:MM");
+    print("Scrivi l'ora in formato <HH:MM>");
 
     timeInput = stdin.readLineSync();
 
